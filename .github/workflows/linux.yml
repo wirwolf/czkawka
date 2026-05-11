@@ -32,26 +32,27 @@ jobs:
       - name: Setup rust version
         run: rustup default 1.92.0
 
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}
+
       - name: Build Release
         if: ${{ github.ref == 'refs/heads/master' || github.ref_type == 'tag' }}
         run: |
-          sed -i 's/#lto = /lto = /g' Cargo.toml
-          sed -i 's/#codegen-units /codegen-units /g' Cargo.toml
-
           echo "VERS=release" >> $GITHUB_ENV
 
-          cargo build --release
-          mv target/release/czkawka_cli linux_czkawka_cli_${{ env.ARCHNAME }}
-          mv target/release/czkawka_gui linux_czkawka_gui_${{ env.ARCHNAME }}
-          mv target/release/krokiet linux_krokiet_${{ env.ARCHNAME }}
-          cargo build --release --bin krokiet --no-default-features --features "winit_skia_opengl,winit_software"
-          mv target/release/krokiet linux_krokiet_skia_opengl_${{ env.ARCHNAME }}
-          cargo build --release --bin krokiet --no-default-features --features "winit_skia_vulkan,winit_software"
-          mv target/release/krokiet linux_krokiet_skia_vulkan_${{ env.ARCHNAME }}
-          cargo build --release --bin krokiet --no-default-features --features "femtovg_wgpu"
-          mv target/release/krokiet linux_krokiet_femtovg_wgpu_${{ env.ARCHNAME }}
-          cargo build --release --bin krokiet --no-default-features --features "winit_femtovg,winit_skia_opengl,winit_skia_vulkan,winit_software,femtovg_wgpu"
-          mv target/release/krokiet linux_krokiet_all_backends_${{ env.ARCHNAME }}
+          cargo build --profile ci-release
+          mv target/ci-release/czkawka_cli linux_czkawka_cli_${{ env.ARCHNAME }}
+          mv target/ci-release/czkawka_gui linux_czkawka_gui_${{ env.ARCHNAME }}
+          mv target/ci-release/krokiet linux_krokiet_${{ env.ARCHNAME }}
+          cargo build --profile ci-release --bin krokiet --no-default-features --features "winit_skia_opengl,winit_software"
+          mv target/ci-release/krokiet linux_krokiet_skia_opengl_${{ env.ARCHNAME }}
+          cargo build --profile ci-release --bin krokiet --no-default-features --features "winit_skia_vulkan,winit_software"
+          mv target/ci-release/krokiet linux_krokiet_skia_vulkan_${{ env.ARCHNAME }}
+          cargo build --profile ci-release --bin krokiet --no-default-features --features "femtovg_wgpu"
+          mv target/ci-release/krokiet linux_krokiet_femtovg_wgpu_${{ env.ARCHNAME }}
+          cargo build --profile ci-release --bin krokiet --no-default-features --features "winit_femtovg,winit_skia_opengl,winit_skia_vulkan,winit_software,femtovg_wgpu"
+          mv target/ci-release/krokiet linux_krokiet_all_backends_${{ env.ARCHNAME }}
 
       # Fast CI profile, to avoid out of disk space errors
       # I doubt that anyone would use debug builds from here, because they are slow and contains not final changes
@@ -60,9 +61,9 @@ jobs:
         run: |
           sed -i 's/^\(\[profile\.dev\.package.*\)/#\1/' Cargo.toml
           sed -i 's|^opt-level = 3 # OPT PACKAGES|#opt-level = 3 # OPT PACKAGES|' Cargo.toml
-          
+
           echo "VERS=debug" >> $GITHUB_ENV
-          
+
           cargo build --profile fastci
           mv target/fastci/czkawka_cli linux_czkawka_cli_${{ env.ARCHNAME }}
           mv target/fastci/czkawka_gui linux_czkawka_gui_${{ env.ARCHNAME }}
@@ -82,7 +83,7 @@ jobs:
       - name: Pack with 7z
         run: |
           # 7z -mx=3 in rust files, takes 40% less space but is 2x slower than zip -mx=1
-          # 7z -mx=3 is 8x faster than 7z -mx=5, but generates 20% bigger 
+          # 7z -mx=3 is 8x faster than 7z -mx=5, but generates 20% bigger
           # So looks that -mx=3 is the best option
           time 7z a -t7z -mx=3 czkawka_all.7z \
             linux_czkawka_cli_${{ env.ARCHNAME }} \
@@ -137,26 +138,27 @@ jobs:
       - name: Setup rust version
         run: rustup default 1.92.0
 
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}
+
       - name: Build Release
         if: ${{ github.ref == 'refs/heads/master' || github.ref_type == 'tag' }}
         run: |
-          sed -i 's/#lto = /lto = /g' Cargo.toml
-          sed -i 's/#codegen-units /codegen-units /g' Cargo.toml
-
           echo "VERS=release" >> $GITHUB_ENV
 
-          cargo build --release --features "heif,libraw,libavif"
-          mv target/release/czkawka_cli linux_czkawka_cli_heif_raw_avif_${{ env.ARCHNAME }}
-          mv target/release/czkawka_gui linux_czkawka_gui_heif_raw_avif_${{ env.ARCHNAME }}
-          mv target/release/krokiet linux_krokiet_heif_raw_avif_${{ env.ARCHNAME }}
-          cargo build --release --bin krokiet --no-default-features --features "winit_skia_opengl,winit_software,heif,libraw,libavif"
-          mv target/release/krokiet linux_krokiet_heif_raw_avif_skia_opengl_${{ env.ARCHNAME }}
-          cargo build --release --bin krokiet --no-default-features --features "winit_skia_vulkan,winit_software,heif,libraw,libavif"
-          mv target/release/krokiet linux_krokiet_heif_raw_avif_skia_vulkan_${{ env.ARCHNAME }}
-          cargo build --release --bin krokiet --no-default-features --features "femtovg_wgpu,heif,libraw,libavif"
-          mv target/release/krokiet linux_krokiet_heif_raw_avif_femtovg_wgpu_${{ env.ARCHNAME }}
-          cargo build --release --bin krokiet --no-default-features --features "winit_femtovg,winit_skia_opengl,winit_skia_vulkan,winit_software,femtovg_wgpu,heif,libraw,libavif"
-          mv target/release/krokiet linux_krokiet_heif_raw_avif_all_backends_${{ env.ARCHNAME }}
+          cargo build --profile ci-release --features "heif,libraw,libavif"
+          mv target/ci-release/czkawka_cli linux_czkawka_cli_heif_raw_avif_${{ env.ARCHNAME }}
+          mv target/ci-release/czkawka_gui linux_czkawka_gui_heif_raw_avif_${{ env.ARCHNAME }}
+          mv target/ci-release/krokiet linux_krokiet_heif_raw_avif_${{ env.ARCHNAME }}
+          cargo build --profile ci-release --bin krokiet --no-default-features --features "winit_skia_opengl,winit_software,heif,libraw,libavif"
+          mv target/ci-release/krokiet linux_krokiet_heif_raw_avif_skia_opengl_${{ env.ARCHNAME }}
+          cargo build --profile ci-release --bin krokiet --no-default-features --features "winit_skia_vulkan,winit_software,heif,libraw,libavif"
+          mv target/ci-release/krokiet linux_krokiet_heif_raw_avif_skia_vulkan_${{ env.ARCHNAME }}
+          cargo build --profile ci-release --bin krokiet --no-default-features --features "femtovg_wgpu,heif,libraw,libavif"
+          mv target/ci-release/krokiet linux_krokiet_heif_raw_avif_femtovg_wgpu_${{ env.ARCHNAME }}
+          cargo build --profile ci-release --bin krokiet --no-default-features --features "winit_femtovg,winit_skia_opengl,winit_skia_vulkan,winit_software,femtovg_wgpu,heif,libraw,libavif"
+          mv target/ci-release/krokiet linux_krokiet_heif_raw_avif_all_backends_${{ env.ARCHNAME }}
 
       # Fast CI profile, to avoid out of disk space errors
       # I doubt that anyone would use debug builds from here, because they are slow and contains not final changes
@@ -239,14 +241,16 @@ jobs:
           rustup default 1.92.0
           rustup target add x86_64-unknown-linux-musl
 
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: musl
+
       - name: Build Release
         if: ${{ github.ref == 'refs/heads/master' || github.ref_type == 'tag' }}
         run: |
-          sed -i 's/#lto = /lto = /g' Cargo.toml
-          sed -i 's/#codegen-units /codegen-units /g' Cargo.toml
-          cargo build --release --bin czkawka_cli --target x86_64-unknown-linux-musl
+          cargo build --profile ci-release --bin czkawka_cli --target x86_64-unknown-linux-musl
 
-          mv target/x86_64-unknown-linux-musl/release/czkawka_cli linux_czkawka_cli_musl
+          mv target/x86_64-unknown-linux-musl/ci-release/czkawka_cli linux_czkawka_cli_musl
 
       - name: Build Debug
         if: ${{ github.ref != 'refs/heads/master' && github.ref_type != 'tag' }}
@@ -254,7 +258,7 @@ jobs:
           sed -i 's/^\(\[profile\.dev\.package.*\)/#\1/' Cargo.toml
           sed -i 's|^opt-level = 3 # OPT PACKAGES|#opt-level = 3 # OPT PACKAGES|' Cargo.toml
           cargo build --bin czkawka_cli --target x86_64-unknown-linux-musl
-          
+
           mv target/x86_64-unknown-linux-musl/debug/czkawka_cli linux_czkawka_cli_musl
 
       - name: Store Linux CLI
@@ -291,6 +295,10 @@ jobs:
           rustup default 1.92.0
           rustup target add i686-unknown-linux-gnu
 
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: 32bit
+
       - name: Build Debug for 32-bit
         run: |
           sed -i 's/^\(\[profile\.dev\.package.*\)/#\1/' Cargo.toml
@@ -319,6 +327,10 @@ jobs:
       - name: Setup rust version
         run: rustup default 1.92.0
 
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-targets: "false"
+
       - name: Build packages
         run: |
           rm -rf target || true
@@ -326,45 +338,28 @@ jobs:
           mv target/debug/czkawka_cli czkawka_cli_debug_1
           mv target/debug/czkawka_gui czkawka_gui_debug_1
           mv target/debug/krokiet krokiet_debug_1
-          
+
           rm -rf target || true
           cargo build --release --features "heif,libraw"
           mv target/release/czkawka_cli czkawka_cli_release_1
           mv target/release/czkawka_gui czkawka_gui_release_1
           mv target/release/krokiet krokiet_release_1
-          
+
           rm -rf target || true
           cargo build --features "heif,libraw"
           mv target/debug/czkawka_cli czkawka_cli_debug_2
           mv target/debug/czkawka_gui czkawka_gui_debug_2
           mv target/debug/krokiet krokiet_debug_2
-          
+
           rm -rf target || true
           cargo build --release --features "heif,libraw"
           mv target/release/czkawka_cli czkawka_cli_release_2
           mv target/release/czkawka_gui czkawka_gui_release_2
           mv target/release/krokiet krokiet_release_2
-          
+
           bash misc/compare_files.sh
 
   linux-tests:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Install basic libraries
-        run: sudo apt update || true; sudo apt install libgtk-4-dev libheif-dev libraw-dev -y
-
-      - name: Setup rust version
-        run: rustup default 1.92.0
-
-      - name: Test
-        run: |
-          sed -i 's/^\(\[profile\.dev\.package.*\)/#\1/' Cargo.toml
-          sed -i 's|^opt-level = 3 # OPT PACKAGES|#opt-level = 3 # OPT PACKAGES|' Cargo.toml
-          xvfb-run cargo test
-
-  linux-regression-tests-on-minimal-rust-version:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
@@ -375,20 +370,36 @@ jobs:
       - name: Setup rust version
         run: rustup default 1.92.0
 
-      - name: Build test version
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Disable optimizations
         run: |
           sed -i 's/^\(\[profile\.dev\.package.*\)/#\1/' Cargo.toml
           sed -i 's|^opt-level = 3 # OPT PACKAGES|#opt-level = 3 # OPT PACKAGES|' Cargo.toml
-          cargo build --profile test --bin czkawka_cli
 
-      - name: Linux Regression Test
+      - name: Cache TestFiles
+        id: cache-testfiles
+        uses: actions/cache@v4
+        with:
+          path: TestFiles.zip
+          key: test-files-6.0.0
+
+      - name: Download TestFiles
+        if: steps.cache-testfiles.outputs.cache-hit != 'true'
+        run: wget -q https://github.com/qarmin/czkawka/releases/download/6.0.0/TestFiles.zip
+
+      - name: Build test binary and ci_tester
         run: |
-          wget -q https://github.com/qarmin/czkawka/releases/download/6.0.0/TestFiles.zip
+          cargo build --profile test --bin czkawka_cli
           cd ci_tester
           cargo build --release
           cd ..
 
-          ci_tester/target/release/ci_tester target/debug/czkawka_cli
+      - name: Linux Regression Test
+        run: ci_tester/target/release/ci_tester target/debug/czkawka_cli
+
+      - name: Run unit tests
+        run: xvfb-run cargo test
 
   android:
     if: ${{ github.ref == 'refs/heads/master' }}

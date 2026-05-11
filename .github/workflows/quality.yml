@@ -23,6 +23,8 @@ jobs:
           rustup component add rustfmt
           rustup component add clippy
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Disable optimizations
         run: |
           sed -i 's/^\(\[profile\.dev\.package.*\)/#\1/' Cargo.toml
